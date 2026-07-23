@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import Script from "next/script";
 import "./globals.css";
 import { getSessionUser } from "@/lib/auth";
 import { getCart } from "@/lib/cart";
@@ -18,7 +19,8 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "Woozi E-commerce",
-  description: "Shop the Woozi catalog — search, filter, and order in a few clicks.",
+  description:
+    "Shop the Woozi catalog — search, filter, and order in a few clicks.",
 };
 
 export default async function RootLayout({
@@ -40,6 +42,7 @@ export default async function RootLayout({
           <Navbar />
           <div className="flex flex-1 flex-col">{children}</div>
         </Providers>
+        <Script src="https://zendesk-clone-04pw.onrender.com/embed.js" data-slug="tiwariji-editz" strategy="afterInteractive" />
       </body>
     </html>
   );
