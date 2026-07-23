@@ -29,6 +29,7 @@ export function Navbar() {
   const { user } = useAuth();
   const { itemCount } = useCart();
   const pathname = usePathname();
+  const links = user?.isAdmin ? [...navLinks, { href: "/admin", label: "Admin", icon: ShieldCheck }] : navLinks;
 
   const links = user?.isAdmin
     ? [...navLinks, { href: "/admin", label: "Admin", icon: ShieldCheck }]
