@@ -54,7 +54,7 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
           )}
 
           <div className="pt-2">
-            <AddToCartButton inStock={product.stock > 0} />
+            <AddToCartButton productId={product._id} inStock={product.stock > 0} />
           </div>
         </div>
       </div>
