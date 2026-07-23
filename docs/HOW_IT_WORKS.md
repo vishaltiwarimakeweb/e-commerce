@@ -1,6 +1,6 @@
 # How Woozi E-commerce Works
 
-Woozi is a full-stack e-commerce app (Next.js App Router + TypeScript + MongoDB/Mongoose) with a public product catalog, custom JWT authentication, per-user reviews, a cart, and checkout. This doc explains each implemented feature and how a user interacts with it. See `docs/PRE_BUILD_PLAN.md` for the database schemas and phased roadmap.
+Woozi is a full-stack e-commerce app (Next.js App Router + TypeScript + MongoDB/Mongoose) with a public product catalog, custom JWT authentication, per-user reviews, a cart, checkout, an admin panel, and a support page. This doc explains each implemented feature and how a user interacts with it. See `docs/PRE_BUILD_PLAN.md` for the database schemas and phased roadmap.
 
 ## Authentication
 
@@ -11,7 +11,7 @@ Custom JWT auth, not a third-party auth library — everything under `src/lib/jw
 - **OAuth**: clicking "Google" or "GitHub" redirects to `/api/auth/{google,github}`, which sends the browser to the provider with a random `state` value also stored in a short-lived cookie (CSRF protection). The provider redirects back to `/api/auth/{google,github}/callback`, which checks `state` matches, exchanges the code, fetches the provider profile, and finds-or-creates a `User` **by email** — so signing in with Google using an email you already registered with credentials logs you into that same account.
 - The root layout (`src/app/layout.tsx`) reads the session cookie server-side on every request and seeds a client `AuthProvider` context, so both server-rendered pages and client components (Navbar, forms, review form) know whether you're signed in without an extra round-trip.
 - The `Navbar` only renders its page links (Dashboard/Profile/My Orders/Cart) once signed in — logged-out visitors just see Sign in/Register. There's intentionally no sign-out button in the Navbar; per the product spec, sign-out only lives on the Profile page.
-- `src/middleware.ts` protects `/profile`, `/cart`, `/orders`, and `/checkout` — an unauthenticated request is redirected to `/sign-in?redirect=<path>`, and the sign-in form sends you back there after a successful login.
+- `src/middleware.ts` protects `/profile`, `/cart`, `/orders`, `/checkout`, and `/admin` — an unauthenticated request is redirected to `/sign-in?redirect=<path>`, and the sign-in form sends you back there after a successful login. `/admin` has an extra check: a signed-in non-admin is redirected to `/` (the JWT payload already carries `isAdmin`, so this doesn't need a database round trip).
 
 ## Dark/light mode
 
@@ -51,6 +51,18 @@ Custom JWT auth, not a third-party auth library — everything under `src/lib/jw
 - `estimatedDeliveryDate` defaults to 5 days out; `paymentStatus` starts `Pending`, `deliveryStatus` starts `On the way`.
 - My Orders lists every order for the signed-in user, newest first; the order detail page is scoped to its owner — another user's order id 404s instead of leaking data.
 
+## Admin panel (`/admin`)
+
+- Visible only to accounts with `isAdmin: true` — there's no promotion UI, so the first admin has to be set directly in the database (a one-time manual edit). The Navbar's Admin link and the `/admin` page itself both check this.
+- Product CRUD: create, edit, and "delete" (soft — flips `isActive` to `false`, which immediately hides it from the public catalog while past orders/reviews that reference it stay intact; a soft-deleted product can be restored the same way).
+- Product photo uploads reuse the same signed-Cloudinary-upload flow as reviews, but `POST /api/uploads/signature` requires admin (not just signed-in) when the upload is for a product, and files land in a separate Cloudinary folder from review photos.
+
+## Support (`/support`)
+
+- Open to everyone, no sign-in required. Since the Navbar only appears once signed in, the page is linked from a footer shown on every page.
+- FAQ is hardcoded content rendered with native `<details>/<summary>` — an accessible accordion with zero JavaScript.
+- The contact form (`POST /api/support/contact`) doesn't write to the database at all — it validates the input and sends an email straight to the support inbox via Brevo's REST API (`src/lib/brevo.ts`), with the visitor's address set as the reply-to so replying goes directly to them.
+
 ## Environment variables
 
-See `.env.example` for the full list with placeholder values — Mongo connection, JWT signing secret, Google/GitHub OAuth credentials + redirect URIs, and Cloudinary credentials. `.env.local` holds the real values and is never committed or read by the assistant.
+See `.env.example` for the full list with placeholder values — Mongo connection, JWT signing secret, Google/GitHub OAuth credentials + redirect URIs, Cloudinary credentials, and Brevo credentials (support form email). `.env.local` holds the real values and is never committed or read by the assistant.

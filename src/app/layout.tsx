@@ -1,10 +1,12 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import Script from "next/script";
 import "./globals.css";
 import { getSessionUser } from "@/lib/auth";
 import { getCart } from "@/lib/cart";
 import { Providers } from "@/components/layout/Providers";
 import { Navbar } from "@/components/layout/Navbar";
+import { Footer } from "@/components/layout/Footer";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -18,7 +20,8 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "Woozi E-commerce",
-  description: "Shop the Woozi catalog — search, filter, and order in a few clicks.",
+  description:
+    "Shop the Woozi catalog — search, filter, and order in a few clicks.",
 };
 
 export default async function RootLayout({
@@ -39,7 +42,9 @@ export default async function RootLayout({
         <Providers initialUser={user} initialCartCount={initialCartCount}>
           <Navbar />
           <div className="flex flex-1 flex-col">{children}</div>
+          <Footer />
         </Providers>
+        <Script src="https://zendesk-clone-04pw.onrender.com/embed.js" data-slug="tiwariji-editz" strategy="afterInteractive" />
       </body>
     </html>
   );

@@ -53,3 +53,19 @@ export async function requireUser(): Promise<
   }
   return { user, response: null };
 }
+
+// Same as requireUser(), but also enforces isAdmin — 403 (not 401) for a
+// signed-in non-admin, since they're authenticated, just not authorized.
+export async function requireAdmin(): Promise<
+  { user: AuthUser; response: null } | { user: null; response: NextResponse }
+> {
+  const { user, response } = await requireUser();
+  if (!user) return { user: null, response };
+  if (!user.isAdmin) {
+    return {
+      user: null,
+      response: NextResponse.json({ error: "Admin access required." }, { status: 403 }),
+    };
+  }
+  return { user, response: null };
+}
