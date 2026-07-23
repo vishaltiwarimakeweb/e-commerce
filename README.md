@@ -1,8 +1,8 @@
 # Woozi E-commerce
 
-A full-stack e-commerce app built with Next.js (App Router), TypeScript, Tailwind CSS, and MongoDB. Custom JWT authentication (email/password + Google/GitHub OAuth), a searchable/filterable product catalog, per-user product reviews with photo uploads, a cart, and checkout.
+A full-stack e-commerce app built with Next.js (App Router), TypeScript, Tailwind CSS, and MongoDB. Custom JWT authentication (email/password + Google/GitHub OAuth), a searchable/filterable product catalog, and per-user product reviews with photo uploads.
 
-See [`docs/HOW_IT_WORKS.md`](docs/HOW_IT_WORKS.md) for how each feature works, and [`docs/PRE_BUILD_PLAN.md`](docs/PRE_BUILD_PLAN.md) for the database schemas and the full phased roadmap.
+See [`src/docs/HOW_IT_WORKS.md`](src/docs/HOW_IT_WORKS.md) for how each feature works, and [`src/docs/PRE_BUILD_PLAN.md`](src/docs/PRE_BUILD_PLAN.md) for the database schemas and the full phased roadmap.
 
 ## Tech stack
 
@@ -33,8 +33,7 @@ See [`docs/HOW_IT_WORKS.md`](docs/HOW_IT_WORKS.md) for how each feature works, a
    - A random string for `JWT_SECRET` (session cookie signing).
    - Google OAuth credentials from the [Google Cloud Console](https://console.cloud.google.com/apis/credentials) — set the authorized redirect URI to match `GOOGLE_REDIRECT_URI`.
    - GitHub OAuth credentials from [GitHub Developer Settings](https://github.com/settings/developers) — set the callback URL to match `GITHUB_REDIRECT_URI`.
-   - Cloudinary credentials from your [Cloudinary dashboard](https://cloudinary.com/console) (used for review and product photo uploads).
-   - A Brevo API key from your [Brevo account](https://app.brevo.com/settings/keys/api) (used to send the support contact form's emails), plus a sender address and the inbox you want those emails delivered to.
+   - Cloudinary credentials from your [Cloudinary dashboard](https://cloudinary.com/console) (used for review photo uploads).
 
 3. **Seed the product catalog** (optional, but the Dashboard is empty without it)
 
@@ -52,18 +51,16 @@ See [`docs/HOW_IT_WORKS.md`](docs/HOW_IT_WORKS.md) for how each feature works, a
 
    Open [http://localhost:3000](http://localhost:3000).
 
-5. **(Optional) Get access to `/admin`** — register a normal account through the app, then flip `isAdmin` to `true` on that user's document directly in MongoDB. There's no promotion UI by design.
-
 ## Scripts
 
-| Command | Description |
-| --- | --- |
-| `npm run dev` | Start the dev server |
-| `npm run build` | Production build |
-| `npm run start` | Run the production build |
-| `npm run lint` | ESLint |
-| `npm run seed` | Reset and reseed the product catalog with dummy data |
+| Command         | Description                                          |
+| --------------- | ---------------------------------------------------- |
+| `npm run dev`   | Start the dev server                                 |
+| `npm run build` | Production build                                     |
+| `npm run start` | Run the production build                             |
+| `npm run lint`  | ESLint                                               |
+| `npm run seed`  | Reset and reseed the product catalog with dummy data |
 
 ## Project status
 
-All 8 phases from `docs/PRE_BUILD_PLAN.md` are implemented: authentication (email/password + OAuth), the product catalog, the product detail page (reviews with photo uploads), user profile + saved addresses, cart, checkout/orders (Cash on Delivery only for now), an admin panel for product management, and a support/FAQ page. The first admin account has to be set manually (`isAdmin: true`) directly in MongoDB — there's no promotion UI. See [`docs/PROGRESS.md`](docs/PROGRESS.md) for verification notes and what (if anything) comes next.
+Implemented so far: authentication (email/password + OAuth), the product catalog (search/filter/sort/pagination), and the product detail page (reviews with photo uploads). Cart, orders, user profile, the admin panel, and the support page are not built yet. See [`src/docs/PROGRESS.md`](src/docs/PROGRESS.md) for the current state and what's next.
