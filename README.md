@@ -1,8 +1,8 @@
 # Woozi E-commerce
 
-A full-stack e-commerce app built with Next.js (App Router), TypeScript, Tailwind CSS, and MongoDB. Custom JWT authentication (email/password + Google/GitHub OAuth), a searchable/filterable product catalog, and per-user product reviews with photo uploads.
+A full-stack e-commerce app built with Next.js (App Router), TypeScript, Tailwind CSS, and MongoDB. Custom JWT authentication (email/password + Google/GitHub OAuth), a searchable/filterable product catalog, per-user product reviews with photo uploads, a cart, and checkout.
 
-See [`src/docs/HOW_IT_WORKS.md`](src/docs/HOW_IT_WORKS.md) for how each feature works, and [`src/docs/PRE_BUILD_PLAN.md`](src/docs/PRE_BUILD_PLAN.md) for the database schemas and the full phased roadmap.
+See [`docs/HOW_IT_WORKS.md`](docs/HOW_IT_WORKS.md) for how each feature works, and [`docs/PRE_BUILD_PLAN.md`](docs/PRE_BUILD_PLAN.md) for the database schemas and the full phased roadmap.
 
 ## Tech stack
 
@@ -63,4 +63,4 @@ See [`src/docs/HOW_IT_WORKS.md`](src/docs/HOW_IT_WORKS.md) for how each feature 
 
 ## Project status
 
-Implemented so far: authentication (email/password + OAuth), the product catalog (search/filter/sort/pagination), and the product detail page (reviews with photo uploads). Cart, orders, user profile, the admin panel, and the support page are not built yet. See [`src/docs/PROGRESS.md`](src/docs/PROGRESS.md) for the current state and what's next.
+Implemented so far: authentication (email/password + OAuth), the product catalog (search/filter/sort/pagination), the product detail page (reviews with photo uploads), user profile + saved addresses, cart, and checkout/orders (Cash on Delivery only for now). The admin panel and the support page are not built yet. See [`docs/PROGRESS.md`](docs/PROGRESS.md) for the current state and what's next.

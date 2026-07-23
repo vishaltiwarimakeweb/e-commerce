@@ -1,57 +1,75 @@
 # Progress
 
-## Status: Phases 0-2 implemented, committed, not yet pushed (no git remote configured)
+## Status: Phases 0-5 implemented and committed. Not fully pushed — see gaps below.
 
 Branches (stacked, each independently reviewable):
 
-- `feature/authentication` off `main` — Phase 0
-- `feature/product-catalog` off `feature/authentication` — Phase 1
-- `feature/product-page` off `feature/product-catalog` — Phase 2 (current HEAD)
+- `feature/authentication` off `main` — Phase 0 — **pushed**
+- `feature/product-catalog` off `feature/authentication` — Phase 1 — **pushed**
+- `feature/product-page` off `feature/product-catalog` — Phase 2 — **pushed**
+- `feature/user-profile` off `feature/product-page` — Phase 3 — not pushed
+- `feature/cart` off `feature/user-profile` — Phase 4 — not pushed
+- `feature/orders` off `feature/cart` — Phase 5 (current HEAD) — not pushed
 
-`main` only has the finalized `docs/PRE_BUILD_PLAN.md` (schemas, phases, architecture clarifications) on top of the original `create-next-app` scaffold — no app code has landed on `main` yet, it's all sitting on the three feature branches above, awaiting PR review/merge.
+`main` only has the finalized `docs/PRE_BUILD_PLAN.md` on top of the original `create-next-app` scaffold — no app code has landed on `main` yet, it's all sitting on the stacked feature branches above, awaiting PR review/merge in order.
 
-**No git remote is configured on this repo** — branches are committed locally only. Before anything can be pushed/PR'd, run `git remote add origin <url>` with the actual GitHub repo.
+**A git remote (`origin`, github.com/vishaltiwarimakeweb/e-commerce) exists and the first three branches were pushed from the IDE.** The assistant's shell environment has no GitHub credentials, so `feature/user-profile`, `feature/cart`, and `feature/orders` (and any new commits on the already-pushed branches) need to be pushed manually — e.g. from VS Code's Source Control panel, or `git push -u origin <branch>` from a terminal that has your credentials.
 
 ## What's done
 
 ### Phase 0 — Authentication (`feature/authentication`)
 
-- Mongoose connection singleton (`src/lib/db.ts`), `User`/`Product`/`Review` models per the schemas in `PRE_BUILD_PLAN.md`.
-- Custom JWT session via `jose` (Edge + Node compatible) — `src/lib/jwt.ts`, `src/lib/auth.ts`. Cookie config exactly as specified in the plan doc.
-- `bcryptjs` password hashing (`src/lib/password.ts`).
-- Email/password register, login, logout, `/me` routes under `src/app/api/auth/`.
-- Hand-rolled OAuth2 authorization-code flow for Google and GitHub (`src/lib/oauth/`), with a short-lived state cookie for CSRF protection. Identity matched by email — an OAuth login authenticates as an existing account with that email if one exists, otherwise creates one.
-- Root layout resolves the session server-side and renders `ThemeProvider` (next-themes, manual dark/light toggle) + `ToastContainer` (react-toastify) + `AuthProvider` (client context) + `Navbar` (page links only show once signed in, per the spec; **no sign-out button in the Navbar** — that's reserved for the Profile page in Phase 3, which doesn't exist yet).
-- Register/sign-in pages with credential forms and OAuth buttons.
-- Verified end-to-end against the real MongoDB in `.env.local`: register, duplicate-email rejection (409), wrong-password rejection (401), login, `/me`, logout.
+- Mongoose connection singleton, `User`/`Product`/`Review` models per the schemas in `PRE_BUILD_PLAN.md`.
+- Custom JWT session via `jose` (Edge + Node compatible), `bcryptjs` password hashing.
+- Email/password register, login, logout, `/me`; hand-rolled OAuth2 for Google/GitHub (state-cookie CSRF protection, identity matched by email).
+- Root layout resolves the session server-side; `Navbar` only shows page links once signed in — no sign-out button there (see Phase 3).
 
 ### Phase 1 — Product catalog (`feature/product-catalog`)
 
-- `src/lib/products.ts` — shared `getProducts()` query (text search, category/price/tag filters, sort, offset pagination ~16/page) used by both the Dashboard SSR page and `GET /api/products`.
-- Dashboard (`src/app/page.tsx`, replaces the starter content) — catalog grid driven entirely by the URL query string (`?q=&category=&minPrice=&maxPrice=&sort=&page=`), so results are bookmarkable and server-rendered.
-- `scripts/seed.ts` (`npm run seed`) — 25 dummy products across 5 categories, placeholder images via picsum.photos (no real Cloudinary needed to have a populated catalog).
-- Verified: search, category filter, sort, malformed/out-of-range pagination all behave correctly against real seeded data.
+- `src/lib/products.ts` — shared `getProducts()` (text search, filters, sort, pagination) used by both the SSR Dashboard and `GET /api/products`.
+- Dashboard driven entirely by URL query string — bookmarkable, server-rendered.
+- `scripts/seed.ts` (`npm run seed`) — 25 dummy products, 5 categories, placeholder images.
 
 ### Phase 2 — Product page (`feature/product-page`)
 
-- `GET /api/products/[id]` (404s cleanly on a bad/missing id) and `/api/products/[id]/reviews` (GET list, POST create-or-update).
-- One review per user per product enforced via a unique index + `findOneAndUpdate` upsert — resubmitting updates the same document instead of duplicating.
-- `Product.ratingAverage`/`ratingCount` recomputed after every review write (`src/lib/reviews.ts`).
-- Cloudinary signed-upload flow: `POST /api/uploads/signature` (auth required) returns a signature; the browser uploads the file straight to Cloudinary from there — file bytes never pass through our server.
-- Product page: image gallery, star rating, tags, description, an `AddToCartButton` that only handles the auth gate for now (redirects signed-out users to sign-in; real cart logic is Phase 4), review form with up to 5 photo attachments.
-- Verified end-to-end: submit a review, rating average/count update correctly, resubmitting the same user's review updates in place, unauthenticated POST returns 401.
+- `GET /api/products/[id]`, `/api/products/[id]/reviews` (list + create-or-update, one review per user per product via unique index + upsert).
+- `Product.ratingAverage`/`ratingCount` recomputed after every review write.
+- Cloudinary signed-upload flow for review photos — file bytes never touch our server.
+
+### Phase 3 — User profile (`feature/user-profile`)
+
+- `src/middleware.ts` protects `/profile`, `/cart`, `/orders`, `/checkout` (redirects to `/sign-in?redirect=...`, honored by the sign-in form). Uses `jose` directly so it stays Edge-compatible — cookie constants were split into `src/lib/session-cookie.ts` so middleware doesn't pull in `lib/auth.ts`'s Mongoose dependency.
+- `User.addresses` retyped as `Types.DocumentArray<Address>` (was a plain array, which doesn't expose `.id()`/`.pull()`).
+- GET/PATCH `/api/profile`, full CRUD on `/api/profile/addresses`. Profile page: editable name/age/phone (email immutable), address manager, and the **only** Sign Out button in the app.
+
+### Phase 4 — Cart (`feature/cart`)
+
+- `Cart` model: `{ user, items: [{ product, quantity }] }` — no price/title snapshot, always read live from `Product` on every request.
+- `GET /api/cart`, `POST /api/cart/items` (add/increment, clamped to stock), `PATCH`/`DELETE /api/cart/items/[productId]`.
+- `CartProvider` (client context) drives a live item-count badge on the Navbar's Cart link, seeded server-side in the root layout.
+- `AddToCartButton` on the product page now actually adds to cart (previously a Phase-2 placeholder toast).
+
+### Phase 5 — Checkout & orders (`feature/orders`)
+
+- `Order` model snapshots items (title/thumbnail/price/quantity) and the shipping address at checkout time — later edits to the catalog or saved addresses never rewrite a past order.
+- `placeOrder()`: stock decremented per item via a guarded update (`stock >= quantity`), not a DB transaction (simpler, no replica-set requirement). If a later item's guard fails, earlier decrements in the same order are compensated back before the error is returned. **Verified against a simulated race** (forced a product's stock below the cart's requested quantity via a direct DB write): order correctly rejected, stock and cart both left untouched.
+- Checkout only offers Cash on Delivery — "Online" stays a reserved schema field with no gateway wired up (per the Architecture Clarifications in `PRE_BUILD_PLAN.md`).
+- Checkout page, My Orders list, order detail page (scoped to the requesting user — a stranger's order id 404s, doesn't leak).
+
+## Verification performed this session
+
+Every phase was checked with `tsc --noEmit` + `eslint` (zero errors) and then exercised against the real MongoDB via the running dev server — not just read over. Notable edge cases confirmed: duplicate email / wrong password / expired-or-missing JWT, OAuth state mismatch, malformed & out-of-range pagination, unauthenticated review POST (401) and same-user resubmission (updates in place, not a duplicate), cart quantity clamped to stock and zero-quantity removal, checkout with empty cart (redirects), checkout with insufficient stock (rejected, nothing mutated), and cross-user order access (404).
 
 ## Known gaps / things to flag to the user
 
-- **No git remote configured** — nothing has been pushed yet.
-- A leftover smoke-test user (`smoketest+phase0@example.com`) and one review exist in the real dev database from manual testing during this session — harmless, but worth knowing it's there. `npm run seed` resets the Product collection but not Users/Reviews.
-- `AGENTS.md` and `CLAUDE.md` show as modified in `git status` from _before_ this session started — not touched by this work, left alone per the mandatory "don't change CLAUDE.md" rule.
+- **3 branches need a manual push** (see remote note above) — `feature/user-profile`, `feature/cart`, `feature/orders`.
+- A smoke-test user (`smoketest+phase0@example.com`) and a couple of reviews/orders exist in the real dev database from manual verification during this session — harmless, but `npm run seed` only resets `Product`, not `User`/`Review`/`Cart`/`Order`.
+- An unexplained top-level `docs/` directory appeared mid-session (now the canonical location — see below) alongside a direct commit from the user ("Initial Commit" on `feature/product-page`) that relocated docs here and committed pre-existing `AGENTS.md`/`CLAUDE.md` edits. Content was verified identical (diffed byte-for-byte against what the assistant wrote) — no data loss, just relocated.
+- **`docs/` (this location) is now canonical**, not `src/docs/` — the stale `src/docs/*` entries were removed from git in a follow-up commit on `feature/product-page`.
 
 ## Next up
 
-- Phase 3: User profile + profile editing (including the addresses subdocument and the Sign Out button, which per the spec belongs only on this page).
-- Phase 4: Cart management (the `AddToCartButton` placeholder gets wired up here).
-- Phase 5: Order management.
-- Phase 6: Admin panel (product CRUD).
+- Phase 6: Admin panel (product CRUD, soft delete via `isActive`).
 - Phase 7: Customer support / FAQ static page.
-- Forgot-password OTP (Redis) is explicitly deferred, not yet scheduled to a phase number.
+- Forgot-password OTP (Redis) — explicitly deferred, no phase number assigned yet.
+- Order cancellation — explicitly out of scope per the Architecture Clarifications; revisit only if requested.
