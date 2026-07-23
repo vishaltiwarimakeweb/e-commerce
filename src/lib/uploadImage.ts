@@ -1,7 +1,14 @@
 // Client-side helper: gets a signed upload from our API, then uploads the file
 // straight to Cloudinary so the file bytes never pass through our server.
-export async function uploadImageToCloudinary(file: File): Promise<string> {
-  const signatureRes = await fetch("/api/uploads/signature", { method: "POST" });
+export async function uploadImageToCloudinary(
+  file: File,
+  context: "review" | "product" = "review",
+): Promise<string> {
+  const signatureRes = await fetch("/api/uploads/signature", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ context }),
+  });
   if (!signatureRes.ok) {
     throw new Error("Couldn't start the upload. Please sign in and try again.");
   }

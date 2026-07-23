@@ -39,7 +39,7 @@ export function ReviewForm({ productId }: { productId: string }) {
 
     setUploading(true);
     try {
-      const uploaded = await Promise.all(files.map(uploadImageToCloudinary));
+      const uploaded = await Promise.all(files.map((file) => uploadImageToCloudinary(file, "review")));
       setImages((prev) => [...prev, ...uploaded]);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Image upload failed.");
