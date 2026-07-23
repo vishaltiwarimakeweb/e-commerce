@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { LayoutDashboard, Package, ShoppingCart, User } from "lucide-react";
 import { useAuth } from "@/components/layout/AuthProvider";
+import { useCart } from "@/components/layout/CartProvider";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
 
 const navLinks = [
@@ -15,6 +16,7 @@ const navLinks = [
 
 export function Navbar() {
   const { user } = useAuth();
+  const { itemCount } = useCart();
   const pathname = usePathname();
 
   return (
@@ -38,7 +40,14 @@ export function Navbar() {
                       : "text-zinc-600 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800"
                   }`}
                 >
-                  <Icon className="size-4" />
+                  <span className="relative">
+                    <Icon className="size-4" />
+                    {href === "/cart" && itemCount > 0 && (
+                      <span className="absolute -right-1.5 -top-1.5 flex size-4 items-center justify-center rounded-full bg-emerald-600 text-[10px] font-semibold text-white">
+                        {itemCount > 9 ? "9+" : itemCount}
+                      </span>
+                    )}
+                  </span>
                   <span className="hidden sm:inline">{label}</span>
                 </Link>
               );

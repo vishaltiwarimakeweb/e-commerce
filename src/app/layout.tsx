@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { getSessionUser } from "@/lib/auth";
+import { getCart } from "@/lib/cart";
 import { Providers } from "@/components/layout/Providers";
 import { Navbar } from "@/components/layout/Navbar";
 
@@ -26,6 +27,7 @@ export default async function RootLayout({
   children: React.ReactNode;
 }>) {
   const user = await getSessionUser();
+  const initialCartCount = user ? (await getCart(user.id)).itemCount : 0;
 
   return (
     <html
@@ -34,7 +36,7 @@ export default async function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="flex min-h-full flex-col font-sans">
-        <Providers initialUser={user}>
+        <Providers initialUser={user} initialCartCount={initialCartCount}>
           <Navbar />
           <div className="flex flex-1 flex-col">{children}</div>
         </Providers>
