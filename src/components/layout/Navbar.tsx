@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+
+
 import {
   LayoutDashboard,
   Package,
@@ -10,6 +12,7 @@ import {
   User,
   FileQuestionMark,
 } from "lucide-react";
+
 import { useAuth } from "@/components/layout/AuthProvider";
 import { useCart } from "@/components/layout/CartProvider";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
@@ -26,9 +29,11 @@ export function Navbar() {
   const { user } = useAuth();
   const { itemCount } = useCart();
   const pathname = usePathname();
+
   const links = user?.isAdmin
     ? [...navLinks, { href: "/admin", label: "Admin", icon: ShieldCheck }]
     : navLinks;
+
 
   return (
     <header className="sticky top-0 z-40 border-b border-zinc-200 bg-white/80 backdrop-blur dark:border-zinc-800 dark:bg-zinc-950/80">
