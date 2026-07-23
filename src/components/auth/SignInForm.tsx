@@ -1,12 +1,13 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "react-toastify";
 import { useAuth } from "@/components/layout/AuthProvider";
 
 export function SignInForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { setUser } = useAuth();
   const [submitting, setSubmitting] = useState(false);
 
@@ -35,7 +36,8 @@ export function SignInForm() {
 
       setUser(data.user);
       toast.success(`Welcome back, ${data.user.name}!`);
-      router.push("/");
+      const redirectTo = searchParams.get("redirect") || "/";
+      router.push(redirectTo);
       router.refresh();
     } catch {
       toast.error("Something went wrong. Please try again.");
