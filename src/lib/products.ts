@@ -1,7 +1,45 @@
 import type { QueryFilter, SortOrder } from "mongoose";
+import { isValidObjectId } from "mongoose";
 import { connectToDatabase } from "@/lib/db";
 import { Product, type ProductDocument } from "@/models/Product";
 import type { ProductQuery } from "@/lib/validation/product";
+
+export interface ProductDetail {
+  _id: string;
+  title: string;
+  description: string;
+  images: string[];
+  price: number;
+  category: string;
+  tags: string[];
+  stock: number;
+  ratingAverage: number;
+  ratingCount: number;
+}
+
+// Full detail for the product page — separate from the catalog card projection above.
+export async function getProductById(id: string): Promise<ProductDetail | null> {
+  if (!isValidObjectId(id)) return null;
+
+  await connectToDatabase();
+  const product = await Product.findOne({ _id: id, isActive: true })
+    .select("title description images price category tags stock ratingAverage ratingCount")
+    .lean();
+  if (!product) return null;
+
+  return {
+    _id: product._id.toString(),
+    title: product.title,
+    description: product.description,
+    images: product.images,
+    price: product.price,
+    category: product.category,
+    tags: product.tags,
+    stock: product.stock,
+    ratingAverage: product.ratingAverage,
+    ratingCount: product.ratingCount,
+  };
+}
 
 const SORT_MAP: Record<string, Record<string, SortOrder>> = {
   newest: { createdAt: -1 },
