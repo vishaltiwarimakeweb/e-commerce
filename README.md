@@ -56,13 +56,13 @@ See [`docs/HOW_IT_WORKS.md`](docs/HOW_IT_WORKS.md) for how each feature works, a
 
 ## Scripts
 
-| Command | Description |
-| --- | --- |
-| `npm run dev` | Start the dev server |
-| `npm run build` | Production build |
-| `npm run start` | Run the production build |
-| `npm run lint` | ESLint |
-| `npm run seed` | Reset and reseed the product catalog with dummy data |
+| Command         | Description                                          |
+| --------------- | ---------------------------------------------------- |
+| `npm run dev`   | Start the dev server                                 |
+| `npm run build` | Production build                                     |
+| `npm run start` | Run the production build                             |
+| `npm run lint`  | ESLint                                               |
+| `npm run seed`  | Reset and reseed the product catalog with dummy data |
 
 ## Project status
 
