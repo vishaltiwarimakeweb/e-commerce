@@ -38,7 +38,8 @@ export default async function OrdersPage() {
               >
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <div>
-                    <p className="text-sm font-medium text-zinc-900 dark:text-zinc-50">Order #{order.id.slice(-8)}</p>
+                    <p className="text-sm font-medium text-zinc-900 dark:text-zinc-50">Order #{order.id}</p>
+
                     <p className="text-xs text-zinc-500 dark:text-zinc-400">
                       {new Date(order.createdAt).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" })}
                     </p>
