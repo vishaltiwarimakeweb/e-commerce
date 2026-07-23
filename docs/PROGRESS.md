@@ -1,75 +1,77 @@
 # Progress
 
-## Status: Phases 0-5 implemented and committed. Not fully pushed — see gaps below.
+## Status: Phases 0-7 implemented and committed — the full roadmap from PRE_BUILD_PLAN.md is done. Not fully pushed — see gaps below.
 
-Branches (stacked, each independently reviewable):
+Branches (stacked, each independently reviewable, in merge order):
 
-- `feature/authentication` off `main` — Phase 0 — **pushed**
-- `feature/product-catalog` off `feature/authentication` — Phase 1 — **pushed**
-- `feature/product-page` off `feature/product-catalog` — Phase 2 — **pushed**
-- `feature/user-profile` off `feature/product-page` — Phase 3 — not pushed
-- `feature/cart` off `feature/user-profile` — Phase 4 — not pushed
-- `feature/orders` off `feature/cart` — Phase 5 (current HEAD) — not pushed
+1. `feature/authentication` off `main` — Phase 0 — **pushed**
+2. `feature/product-catalog` off `feature/authentication` — Phase 1 — **pushed**
+3. `feature/product-page` off `feature/product-catalog` — Phase 2 — **pushed**
+4. `feature/user-profile` off `feature/product-page` — Phase 3 — not pushed
+5. `feature/cart` off `feature/user-profile` — Phase 4 — not pushed
+6. `feature/orders` off `feature/cart` — Phase 5 — not pushed
+7. `feature/admin-panel` off `feature/orders` — Phase 6 + a script-tag fix (see below) — not pushed
+8. `feature/support-page` off `feature/admin-panel` — Phase 7 (current HEAD) — not pushed
 
-`main` only has the finalized `docs/PRE_BUILD_PLAN.md` on top of the original `create-next-app` scaffold — no app code has landed on `main` yet, it's all sitting on the stacked feature branches above, awaiting PR review/merge in order.
+`main` only has the finalized `docs/PRE_BUILD_PLAN.md` on top of the original `create-next-app` scaffold — no app code has landed on `main` yet, it's all sitting on the stacked feature branches above, awaiting PR review/merge **in order** (each branch's diff only makes sense relative to the one before it).
 
-**A git remote (`origin`, github.com/vishaltiwarimakeweb/e-commerce) exists and the first three branches were pushed from the IDE.** The assistant's shell environment has no GitHub credentials, so `feature/user-profile`, `feature/cart`, and `feature/orders` (and any new commits on the already-pushed branches) need to be pushed manually — e.g. from VS Code's Source Control panel, or `git push -u origin <branch>` from a terminal that has your credentials.
+**A git remote (`origin`, github.com/vishaltiwarimakeweb/e-commerce) exists and the first three branches were pushed from the IDE.** The assistant's shell environment has no GitHub credentials, so branches 4-8 (and any new commits on the already-pushed branches) need to be pushed manually — e.g. from VS Code's Source Control panel, or `git push -u origin <branch>` from a terminal that has your credentials.
 
 ## What's done
 
 ### Phase 0 — Authentication (`feature/authentication`)
 
-- Mongoose connection singleton, `User`/`Product`/`Review` models per the schemas in `PRE_BUILD_PLAN.md`.
-- Custom JWT session via `jose` (Edge + Node compatible), `bcryptjs` password hashing.
-- Email/password register, login, logout, `/me`; hand-rolled OAuth2 for Google/GitHub (state-cookie CSRF protection, identity matched by email).
-- Root layout resolves the session server-side; `Navbar` only shows page links once signed in — no sign-out button there (see Phase 3).
+Custom JWT (`jose`) + `bcryptjs`, email/password + hand-rolled Google/GitHub OAuth, `User`/`Product`/`Review` models, Navbar that only shows page links once signed in.
 
 ### Phase 1 — Product catalog (`feature/product-catalog`)
 
-- `src/lib/products.ts` — shared `getProducts()` (text search, filters, sort, pagination) used by both the SSR Dashboard and `GET /api/products`.
-- Dashboard driven entirely by URL query string — bookmarkable, server-rendered.
-- `scripts/seed.ts` (`npm run seed`) — 25 dummy products, 5 categories, placeholder images.
+`getProducts()` (search/filter/sort/pagination) shared by the SSR Dashboard and `GET /api/products`, driven entirely by the URL query string. `scripts/seed.ts` for 25 dummy products.
 
 ### Phase 2 — Product page (`feature/product-page`)
 
-- `GET /api/products/[id]`, `/api/products/[id]/reviews` (list + create-or-update, one review per user per product via unique index + upsert).
-- `Product.ratingAverage`/`ratingCount` recomputed after every review write.
-- Cloudinary signed-upload flow for review photos — file bytes never touch our server.
+Product detail, reviews (one per user per product, upserted), denormalized `ratingAverage`/`ratingCount`, Cloudinary signed direct-to-browser uploads for review photos.
 
 ### Phase 3 — User profile (`feature/user-profile`)
 
-- `src/middleware.ts` protects `/profile`, `/cart`, `/orders`, `/checkout` (redirects to `/sign-in?redirect=...`, honored by the sign-in form). Uses `jose` directly so it stays Edge-compatible — cookie constants were split into `src/lib/session-cookie.ts` so middleware doesn't pull in `lib/auth.ts`'s Mongoose dependency.
-- `User.addresses` retyped as `Types.DocumentArray<Address>` (was a plain array, which doesn't expose `.id()`/`.pull()`).
-- GET/PATCH `/api/profile`, full CRUD on `/api/profile/addresses`. Profile page: editable name/age/phone (email immutable), address manager, and the **only** Sign Out button in the app.
+`src/middleware.ts` (Edge-compatible via `jose`) protects `/profile`, `/cart`, `/orders`, `/checkout`, `/admin`. Profile editing, address CRUD, the only Sign Out button in the app.
 
 ### Phase 4 — Cart (`feature/cart`)
 
-- `Cart` model: `{ user, items: [{ product, quantity }] }` — no price/title snapshot, always read live from `Product` on every request.
-- `GET /api/cart`, `POST /api/cart/items` (add/increment, clamped to stock), `PATCH`/`DELETE /api/cart/items/[productId]`.
-- `CartProvider` (client context) drives a live item-count badge on the Navbar's Cart link, seeded server-side in the root layout.
-- `AddToCartButton` on the product page now actually adds to cart (previously a Phase-2 placeholder toast).
+`Cart` model (`{ product, quantity }` only — price/title/stock always read live). Full add/update/remove API, live Navbar item-count badge.
 
 ### Phase 5 — Checkout & orders (`feature/orders`)
 
-- `Order` model snapshots items (title/thumbnail/price/quantity) and the shipping address at checkout time — later edits to the catalog or saved addresses never rewrite a past order.
-- `placeOrder()`: stock decremented per item via a guarded update (`stock >= quantity`), not a DB transaction (simpler, no replica-set requirement). If a later item's guard fails, earlier decrements in the same order are compensated back before the error is returned. **Verified against a simulated race** (forced a product's stock below the cart's requested quantity via a direct DB write): order correctly rejected, stock and cart both left untouched.
-- Checkout only offers Cash on Delivery — "Online" stays a reserved schema field with no gateway wired up (per the Architecture Clarifications in `PRE_BUILD_PLAN.md`).
-- Checkout page, My Orders list, order detail page (scoped to the requesting user — a stranger's order id 404s, doesn't leak).
+`Order` model snapshots items + address at checkout time. Stock decremented per item via a guarded update with compensation on failure (not a DB transaction — simpler, no replica-set requirement). Verified against a simulated race. COD only; "Online" stays a reserved unused field.
+
+### Phase 6 — Admin panel (`feature/admin-panel`)
+
+- `requireAdmin()` (403 for signed-in non-admins, distinct from `requireUser()`'s 401).
+- `/api/uploads/signature` now takes `{ context: "review" | "product" }` — review uploads stay `requireUser()`, product uploads require `requireAdmin()`.
+- Full product CRUD + soft delete/restore (`isActive` toggle) at `/api/admin/products*`; `/admin` page with inline add/edit form and multi-image upload.
+- **First admin is a manual `isAdmin: true` DB edit** — no promotion UI, per your call on the bootstrap question. Admin link appears in the Navbar only when `isAdmin`.
+- This branch also carries a one-off fix: a `<script>` tag for a support-widget embed (added directly to `layout.tsx` outside the assistant's actions, by you, mid-session) was moved from an invalid position (direct child of `<html>`) into a proper `next/script` call with `strategy="afterInteractive"`, in its own commit separate from the Phase 6 work.
+
+### Phase 7 — Support / FAQ page (`feature/support-page`)
+
+- `lib/brevo.ts` sends transactional email via Brevo's REST API (fetch, no SDK) — **verified end-to-end against your real Brevo account**, a test message was actually delivered to the configured support inbox during testing.
+- `/support`: FAQ via native `<details>/<summary>` (no JS needed) + contact form (`POST /api/support/contact`, no DB collection, per spec). Accessible without signing in.
+- Added a `Footer` (Support link) to the root layout — without it, `/support` had no discoverable entry point, since the Navbar only renders once signed in.
 
 ## Verification performed this session
 
-Every phase was checked with `tsc --noEmit` + `eslint` (zero errors) and then exercised against the real MongoDB via the running dev server — not just read over. Notable edge cases confirmed: duplicate email / wrong password / expired-or-missing JWT, OAuth state mismatch, malformed & out-of-range pagination, unauthenticated review POST (401) and same-user resubmission (updates in place, not a duplicate), cart quantity clamped to stock and zero-quantity removal, checkout with empty cart (redirects), checkout with insufficient stock (rejected, nothing mutated), and cross-user order access (404).
+Every phase was checked with `tsc --noEmit` + `eslint` (zero errors) and then exercised against the real MongoDB (and, for Phase 7, the real Brevo API) via the running dev server. Notable edge cases confirmed across all phases: auth failures (401/403/redirects) at every protected boundary, cross-user data isolation (order detail 404s for a non-owner), stock races on checkout, cart quantity clamping, soft-delete correctly hiding/restoring catalog visibility, and form validation on both client and server.
 
 ## Known gaps / things to flag to the user
 
-- **3 branches need a manual push** (see remote note above) — `feature/user-profile`, `feature/cart`, `feature/orders`.
-- A smoke-test user (`smoketest+phase0@example.com`) and a couple of reviews/orders exist in the real dev database from manual verification during this session — harmless, but `npm run seed` only resets `Product`, not `User`/`Review`/`Cart`/`Order`.
-- An unexplained top-level `docs/` directory appeared mid-session (now the canonical location — see below) alongside a direct commit from the user ("Initial Commit" on `feature/product-page`) that relocated docs here and committed pre-existing `AGENTS.md`/`CLAUDE.md` edits. Content was verified identical (diffed byte-for-byte against what the assistant wrote) — no data loss, just relocated.
-- **`docs/` (this location) is now canonical**, not `src/docs/` — the stale `src/docs/*` entries were removed from git in a follow-up commit on `feature/product-page`.
+- **5 branches need a manual push**: `feature/user-profile`, `feature/cart`, `feature/orders`, `feature/admin-panel`, `feature/support-page`.
+- Test artifacts left in the real dev database from manual verification: `smoketest+phase0@example.com` (now promoted to `isAdmin: true` for Phase 6 testing — you may want to demote or delete it), `regular-user@example.com` (a plain non-admin test account), a "Test Widget Deluxe" product created via the admin panel test, and a few test orders/reviews. `npm run seed` only resets `Product` — everything else needs manual cleanup if you want a pristine dev DB.
+- `docs/` (this location) is canonical, not `src/docs/` — see the "docs/ relocation" note from the Phase 3-5 update for how that happened.
 
 ## Next up
 
-- Phase 6: Admin panel (product CRUD, soft delete via `isActive`).
-- Phase 7: Customer support / FAQ static page.
-- Forgot-password OTP (Redis) — explicitly deferred, no phase number assigned yet.
-- Order cancellation — explicitly out of scope per the Architecture Clarifications; revisit only if requested.
+Nothing is scheduled — Phases 0-7 (the full roadmap) are done. Two things are explicitly deferred, not assigned a phase number:
+
+- Forgot-password OTP (Redis) — marked "later phase" in the original spec, never scheduled.
+- Order cancellation — not part of the original feature list (see Architecture Clarifications in `PRE_BUILD_PLAN.md`).
+
+Anything beyond this (order cancellation, OTP, online payment gateway, admin order management, etc.) needs a new decision from you before it becomes a phase.
