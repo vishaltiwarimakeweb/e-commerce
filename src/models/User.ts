@@ -1,4 +1,4 @@
-import { Schema, model, models, type Document, type Model } from "mongoose";
+import { Schema, model, models, Types, type Document, type Model } from "mongoose";
 import type { AuthProvider } from "@/types/auth";
 
 export interface Address {
@@ -11,7 +11,7 @@ export interface Address {
   state: string;
   postalCode: string;
   country: string;
-  isDefault: boolean;
+  isDefault?: boolean;
 }
 
 export interface UserDocument extends Document {
@@ -23,7 +23,7 @@ export interface UserDocument extends Document {
   age?: number;
   phone?: string;
   isAdmin: boolean;
-  addresses: Address[];
+  addresses: Types.DocumentArray<Address>;
   createdAt: Date;
   updatedAt: Date;
 }
