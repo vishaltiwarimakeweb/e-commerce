@@ -16,6 +16,7 @@
     "bcryptjs": "^3.0.3",
     "cloudinary": "^2.10.0",
     "eve": "^0.27.3",
+    "ioredis": "^5.11.1",
     "jose": "^6.2.4",
     "lucide-react": "^1.26.0",
     "mongoose": "^9.8.0",
