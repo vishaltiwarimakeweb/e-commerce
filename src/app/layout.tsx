@@ -7,6 +7,7 @@ import { getCart } from "@/lib/cart";
 import { Providers } from "@/components/layout/Providers";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
+import { ChatWidget } from "@/components/chat/ChatWidget";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -43,6 +44,7 @@ export default async function RootLayout({
           <Navbar />
           <div className="flex flex-1 flex-col">{children}</div>
           <Footer />
+          <ChatWidget />
         </Providers>
         <Script src="https://zendesk-clone-04pw.onrender.com/embed.js" data-slug="tiwariji-editz" strategy="afterInteractive" />
       </body>
