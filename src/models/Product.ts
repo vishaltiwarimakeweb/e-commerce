@@ -1,4 +1,9 @@
-import { Schema, model, models, type Document, type Model } from "mongoose";
+import mongoose, { type Document, type Model } from "mongoose";
+
+// Destructured off the default export (not named imports) — mongoose is CommonJS,
+// and the eve agent runtime's stricter ESM interop can't see named exports like
+// `models` that Next.js's bundler synthesizes for us. This form works under both.
+const { Schema, model, models } = mongoose;
 
 export interface ProductDocument extends Document {
   title: string;

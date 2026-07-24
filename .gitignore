@@ -17,6 +17,10 @@
 /.next/
 /out/
 
+# eve build/dev artifacts (compiled agent output, logs, cache — like .next/)
+/.eve/
+/.output/
+
 # production
 /build
 
