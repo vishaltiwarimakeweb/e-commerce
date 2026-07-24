@@ -1,5 +1,5 @@
-// Kept separate from lib/auth.ts (which pulls in Mongoose) so middleware.ts,
-// which runs on the Edge runtime, can import just this without Node-only deps.
+// Kept separate from lib/auth.ts (which pulls in Mongoose) so cookie name/options
+// can be imported without dragging in Node-only deps.
 export const SESSION_COOKIE_NAME = "session";
 
 export const SESSION_COOKIE_OPTIONS = {

@@ -33,7 +33,9 @@ Product detail, reviews (one per user per product, upserted), denormalized `rati
 
 ### Phase 3 — User profile (`feature/user-profile`)
 
-`src/middleware.ts` (Edge-compatible via `jose`) protects `/profile`, `/cart`, `/orders`, `/checkout`, `/admin`. Profile editing, address CRUD, the only Sign Out button in the app.
+`src/middleware.ts` (Edge-compatible via `jose`) protected `/profile`, `/cart`, `/orders`, `/checkout`, `/admin`. Profile editing, address CRUD, the only Sign Out button in the app.
+
+**Update (post ShopWise work, see `eve-docs/PROGRESS.md`)**: `src/middleware.ts` was removed — it was redundant with the per-page `getSessionUser()` checks that already existed on every one of those routes, and Next.js middleware always compiles to an Edge Function, which turned out to conflict with deploying the eve chat agent as a co-located Vercel service. Route protection now lives entirely in each page component.
 
 ### Phase 4 — Cart (`feature/cart`)
 

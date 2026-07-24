@@ -1,6 +1,6 @@
 # Progress
 
-## Status: All 5 phases of the ShopWise AI assistant implemented and verified.
+## Status: All 5 phases implemented and verified. One post-deploy blocker found and fixed.
 
 Phases (per the roadmap agreed with the user):
 
@@ -9,6 +9,23 @@ Phases (per the roadmap agreed with the user):
 3. Chat widget UI (bottom-left, on every page).
 4. Cross-device resume for signed-in users.
 5. Rate limiting on the chat endpoint.
+
+## Vercel deployment fix: removed `src/middleware.ts`
+
+After the 5 phases below were committed, deploying to Vercel failed with:
+
+```
+Edge Runtime is not supported in services. Service "eve" produced Edge Function output "_middleware".
+Remove the Edge runtime configuration from this service or deploy it outside of services.
+```
+
+**Root cause** (traced through `node_modules/eve/dist/src/internal/nitro/host/build-application.js` and `copy-host-middleware.js`, not guessed from the error text alone): `withEve()` deploys the agent as a co-located Vercel "service" in the same project. That build step unconditionally copies the host Next.js app's compiled middleware function into the eve service's own output (`copyHostMiddlewareFunctions`), presumably so middleware still applies to requests the service handles. Next.js middleware always compiles to an Edge Function — there's no `runtime: "nodejs"` option for it in this Next.js version (checked `middleware-config.d.ts`; no such field exists) — and Vercel's "services" primitive rejects Edge Function output entirely. There's no eve config flag to skip that copy step.
+
+**Considered and rejected**: deploying the eve agent as a fully separate Vercel project. `EVE_NEXT_PRODUCTION_ORIGIN` (the env var for "eve lives elsewhere") is checked in `resolveProductionDestination()` in `node_modules/eve/dist/src/public/next/index.js` — but that function checks `process.env.VERCEL` *first* and returns the co-located service prefix regardless of the origin env var whenever a build actually runs on Vercel. So a second project wouldn't have avoided the conflict on its own; it would also have required disabling `withEve()`'s co-location for production and having the widget call the agent cross-origin (CORS), a materially bigger change than the actual fix needed.
+
+**Actual fix**: removed `src/middleware.ts` entirely. It protected `/profile`, `/cart`, `/orders`, `/checkout` (redirecting signed-out users to `/sign-in`) — but every one of those routes' page components already had its own equivalent `getSessionUser()` + `redirect()` guard (confirmed by reading each file before deleting anything), and `/admin` was never in the middleware's matcher to begin with, relying solely on its own page-level check. So the middleware was pure redundant defense-in-depth; removing it is a deployment fix, not a security regression. Verified: `next build` now emits an empty `middleware-manifest.json` (`"middleware": {}`, `"functions": {}`), and a full `eve build` still succeeds. See `docs/NOTES.md` for the full note (this touched original app code, not just the eve/ShopWise pieces) and `docs/HOW_IT_WORKS.md`/`docs/PROGRESS.md` for the updated route-protection description.
+
+**Not yet re-verified**: an actual Vercel deployment (I have no Vercel CLI/dashboard access in this environment) — please redeploy and confirm the error is gone.
 
 Committed on `feature/shopwise-chat-assistant` (branched off `fresh`). Commit `96cd570` covers Phases 1-3 (pushed by the assistant — no GitHub credentials in that shell, so it's local-only until you push). Commit `2bc7a27` ("Product Browser Bot") covers Phases 4-5 — that one was committed from your own machine/editor while this session was still running, so it isn't pushed either yet.
 
